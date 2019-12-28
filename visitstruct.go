@@ -7,6 +7,7 @@ import (
 
 type action string
 
+// Action is the type of visitor actions
 type Action action
 
 // Visitor actions
