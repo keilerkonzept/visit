@@ -71,6 +71,10 @@ func CycleFree(obj interface{}, f func(reflect.Value) (Action, error)) error {
 			for i := 0; i < v.NumField(); i++ {
 				worklist = append(worklist, v.FieldByIndex([]int{i}))
 			}
+		case reflect.Interface:
+			if !v.IsNil() {
+				worklist = append(worklist, v.Elem())
+			}
 		case reflect.Ptr:
 			if !v.IsNil() {
 				worklist = append(worklist, v.Elem())
