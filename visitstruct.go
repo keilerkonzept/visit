@@ -7,17 +7,19 @@ import (
 
 type action string
 
+type Action action
+
 // Visitor actions
 const (
-	Skip     action = "Skip"
-	Stop     action = "Stop"
-	Continue action = "Continue"
+	Skip     Action = "Skip"
+	Stop     Action = "Stop"
+	Continue Action = "Continue"
 )
 
 // Any visits a structure using cycle detection
-func Any(obj interface{}, f func(reflect.Value) (action, error)) error {
+func Any(obj interface{}, f func(reflect.Value) (Action, error)) error {
 	seen := make(map[uintptr]bool)
-	return CycleFree(obj, func(v reflect.Value) (action, error) {
+	return CycleFree(obj, func(v reflect.Value) (Action, error) {
 		switch v.Kind() {
 		case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
 			ptr := v.Pointer()
@@ -31,7 +33,7 @@ func Any(obj interface{}, f func(reflect.Value) (action, error)) error {
 }
 
 // CycleFree visits a structure *without* performing cycle detection
-func CycleFree(obj interface{}, f func(reflect.Value) (action, error)) error {
+func CycleFree(obj interface{}, f func(reflect.Value) (Action, error)) error {
 	worklist := []reflect.Value{reflect.ValueOf(obj)}
 	for len(worklist) > 0 {
 		v := worklist[0]
