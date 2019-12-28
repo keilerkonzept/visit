@@ -20,7 +20,7 @@ const (
 // VisitFunc is a visitor function
 type VisitFunc func(value, parent, index reflect.Value) (Action, error)
 
-// Any visits a structure using cycle detection
+// Any visits a structure, with cycle detection
 func Any(obj interface{}, f VisitFunc) error {
 	seen := make(map[uintptr]bool)
 	return CycleFree(obj, func(value, parent, index reflect.Value) (Action, error) {
