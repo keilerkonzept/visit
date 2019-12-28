@@ -22,9 +22,9 @@ func Example() {
 	obj.Ptr = obj
 
 	var strings []string
-	Any(obj, func(v reflect.Value) (Action, error) {
-		if v.Kind() == reflect.String {
-			strings = append(strings, v.String())
+	Any(obj, func(value, parent, index reflect.Value) (Action, error) {
+		if value.Kind() == reflect.String {
+			strings = append(strings, value.String())
 		}
 		return Continue, nil
 	})
@@ -59,7 +59,7 @@ func TestAny(t *testing.T) {
 
 	type args struct {
 		obj interface{}
-		f   func(reflect.Value) (Action, error)
+		f   func(v, p, i reflect.Value) (Action, error)
 	}
 	tests := []struct {
 		name    string
@@ -72,7 +72,7 @@ func TestAny(t *testing.T) {
 			name: "kitchen sink",
 			args: args{
 				obj: &loopy,
-				f: func(v reflect.Value) (Action, error) {
+				f: func(v, _, _ reflect.Value) (Action, error) {
 					if v.Kind() == reflect.String {
 						accumulatedStrings[v.String()]++
 					}

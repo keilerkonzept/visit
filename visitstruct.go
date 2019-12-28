@@ -17,30 +17,37 @@ const (
 	Continue Action = "Continue"
 )
 
+// VisitFunc is a visitor function
+type VisitFunc func(value, parent, index reflect.Value) (Action, error)
+
 // Any visits a structure using cycle detection
-func Any(obj interface{}, f func(reflect.Value) (Action, error)) error {
+func Any(obj interface{}, f VisitFunc) error {
 	seen := make(map[uintptr]bool)
-	return CycleFree(obj, func(v reflect.Value) (Action, error) {
-		switch v.Kind() {
+	return CycleFree(obj, func(value, parent, index reflect.Value) (Action, error) {
+		switch value.Kind() {
 		case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
-			ptr := v.Pointer()
+			ptr := value.Pointer()
 			if seen[ptr] {
 				return Skip, nil
 			}
 			seen[ptr] = true
 		}
-		return f(v)
+		return f(value, parent, index)
 	})
 }
 
 // CycleFree visits a structure *without* performing cycle detection
-func CycleFree(obj interface{}, f func(reflect.Value) (Action, error)) error {
-	worklist := []reflect.Value{reflect.ValueOf(obj)}
+func CycleFree(obj interface{}, f VisitFunc) error {
+	type item struct {
+		value, parent, index reflect.Value
+	}
+	worklist := []item{{value: reflect.ValueOf(obj)}}
 	for len(worklist) > 0 {
-		v := worklist[0]
+		current := worklist[0]
+		value := current.value
 		worklist[0] = worklist[len(worklist)-1]
 		worklist = worklist[:len(worklist)-1]
-		action, err := f(v)
+		action, err := f(value, current.parent, current.index)
 		if err != nil {
 			return err
 		}
@@ -52,32 +59,32 @@ func CycleFree(obj interface{}, f func(reflect.Value) (Action, error)) error {
 		case Continue:
 		}
 
-		switch v.Kind() {
+		switch value.Kind() {
 		case reflect.Map:
-			i := v.MapRange()
+			i := value.MapRange()
 			for i.Next() {
-				worklist = append(worklist, i.Key())
-				worklist = append(worklist, i.Value())
+				worklist = append(worklist, item{value: i.Key(), parent: value})
+				worklist = append(worklist, item{i.Value(), value, i.Key()})
 			}
 		case reflect.Slice:
-			for i := 0; i < v.Len(); i++ {
-				worklist = append(worklist, v.Index(i))
+			for i := 0; i < value.Len(); i++ {
+				worklist = append(worklist, item{value.Index(i), value, reflect.ValueOf(i)})
 			}
 		case reflect.Array:
-			for i := 0; i < v.Len(); i++ {
-				worklist = append(worklist, v.Index(i))
+			for i := 0; i < value.Len(); i++ {
+				worklist = append(worklist, item{value.Index(i), value, reflect.ValueOf(i)})
 			}
 		case reflect.Struct:
-			for i := 0; i < v.NumField(); i++ {
-				worklist = append(worklist, v.FieldByIndex([]int{i}))
+			for i := 0; i < value.NumField(); i++ {
+				worklist = append(worklist, item{value.FieldByIndex([]int{i}), value, reflect.ValueOf(i)})
 			}
 		case reflect.Interface:
-			if !v.IsNil() {
-				worklist = append(worklist, v.Elem())
+			if !value.IsNil() {
+				worklist = append(worklist, item{value: value.Elem(), parent: value})
 			}
 		case reflect.Ptr:
-			if !v.IsNil() {
-				worklist = append(worklist, v.Elem())
+			if !value.IsNil() {
+				worklist = append(worklist, item{value: value.Elem(), parent: value})
 			}
 		}
 	}

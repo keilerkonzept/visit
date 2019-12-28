@@ -40,9 +40,9 @@ func main() {
 	obj.Ptr = obj
 
 	var strings []string
-	visitstruct.Any(obj, func(v reflect.Value) (action, error) {
-		if v.Kind() == reflect.String {
-			strings = append(strings, v.String())
+	visitstruct.Any(obj, func(value, parent, index reflect.Value) (action, error) {
+		if value.Kind() == reflect.String {
+			strings = append(strings, value.String())
 		}
 		return Continue, nil
 	})
