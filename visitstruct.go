@@ -36,18 +36,17 @@ func Any(obj interface{}, f VisitFunc) error {
 	})
 }
 
+type worklistItem struct {
+	value, parent, index reflect.Value
+}
+
 // CycleFree visits a structure *without* performing cycle detection
 func CycleFree(obj interface{}, f VisitFunc) error {
-	type item struct {
-		value, parent, index reflect.Value
-	}
-	worklist := []item{{value: reflect.ValueOf(obj)}}
+	worklist := []worklistItem{{value: reflect.ValueOf(obj)}}
 	for len(worklist) > 0 {
-		current := worklist[0]
-		value := current.value
-		worklist[0] = worklist[len(worklist)-1]
-		worklist = worklist[:len(worklist)-1]
-		action, err := f(value, current.parent, current.index)
+		var top worklistItem
+		top, worklist = pop(worklist)
+		action, err := f(top.value, top.parent, top.index)
 		if err != nil {
 			return err
 		}
@@ -56,38 +55,39 @@ func CycleFree(obj interface{}, f VisitFunc) error {
 			continue
 		case Stop:
 			return nil
-		case Continue:
 		}
+		worklist = queue(worklist, top.value)
+	}
+	return nil
+}
 
-		switch value.Kind() {
-		case reflect.Map:
-			i := value.MapRange()
-			for i.Next() {
-				worklist = append(worklist, item{value: i.Key(), parent: value})
-				worklist = append(worklist, item{i.Value(), value, i.Key()})
-			}
-		case reflect.Slice:
-			for i := 0; i < value.Len(); i++ {
-				worklist = append(worklist, item{value.Index(i), value, reflect.ValueOf(i)})
-			}
-		case reflect.Array:
-			for i := 0; i < value.Len(); i++ {
-				worklist = append(worklist, item{value.Index(i), value, reflect.ValueOf(i)})
-			}
-		case reflect.Struct:
-			for i := 0; i < value.NumField(); i++ {
-				worklist = append(worklist, item{value.FieldByIndex([]int{i}), value, reflect.ValueOf(i)})
-			}
-		case reflect.Interface:
-			if !value.IsNil() {
-				worklist = append(worklist, item{value: value.Elem(), parent: value})
-			}
-		case reflect.Ptr:
-			if !value.IsNil() {
-				worklist = append(worklist, item{value: value.Elem(), parent: value})
-			}
+func pop(worklist []worklistItem) (worklistItem, []worklistItem) {
+	top := worklist[0]
+	worklist[0] = worklist[len(worklist)-1]
+	worklist = worklist[:len(worklist)-1]
+	return top, worklist
+}
+
+func queue(worklist []worklistItem, childrenOf reflect.Value) []worklistItem {
+	switch childrenOf.Kind() {
+	case reflect.Map:
+		i := childrenOf.MapRange()
+		for i.Next() {
+			worklist = append(worklist, worklistItem{value: i.Key(), parent: childrenOf})
+			worklist = append(worklist, worklistItem{i.Value(), childrenOf, i.Key()})
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < childrenOf.Len(); i++ {
+			worklist = append(worklist, worklistItem{childrenOf.Index(i), childrenOf, reflect.ValueOf(i)})
+		}
+	case reflect.Interface, reflect.Ptr:
+		if !childrenOf.IsNil() {
+			worklist = append(worklist, worklistItem{value: childrenOf.Elem(), parent: childrenOf})
+		}
+	case reflect.Struct:
+		for i := 0; i < childrenOf.NumField(); i++ {
+			worklist = append(worklist, worklistItem{childrenOf.FieldByIndex([]int{i}), childrenOf, reflect.ValueOf(i)})
 		}
 	}
-
-	return nil
+	return worklist
 }
