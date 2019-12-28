@@ -17,14 +17,20 @@ go get -u "github.com/keilerkonzept/visitstruct"
 ## Use it
 
 ```go
-import "github.com/keilerkonzept/visitstruct"
+import (
+    "github.com/keilerkonzept/visitstruct"
+
+    "fmt"
+    "reflect"
+)
+
+type myStruct struct {
+    String string
+    Map    map[string]myStruct
+    Ptr    *myStruct
+}
 
 func main() {
-   type myStruct struct {
-		String string
-		Map    map[string]myStruct
-		Ptr    *myStruct
-	}
 	obj := &myStruct{
 		String: "hello",
 		Map: map[string]myStruct{
@@ -34,7 +40,7 @@ func main() {
 	obj.Ptr = obj
 
 	var strings []string
-	Any(obj, func(v reflect.Value) (action, error) {
+	visitstruct.Any(obj, func(v reflect.Value) (action, error) {
 		if v.Kind() == reflect.String {
 			strings = append(strings, v.String())
 		}
