@@ -1,6 +1,6 @@
 # visitstruct
 
-[![](https://godoc.org/github.com/keilerkonzept/visitstruct?status.svg)](http://godoc.org/github.com/keilerkonzept/visitstruct) [![](https://goreportcard.com/badge/github.com/keilerkonzept/visitstruct/goreportcard)](https://goreportcard.com/report/github.com/keilerkonzept/visitstruct)
+[![](https://godoc.org/github.com/keilerkonzept/visitstruct?status.svg)](http://godoc.org/github.com/keilerkonzept/visitstruct) [![Go Report Card](https://goreportcard.com/badge/github.com/keilerkonzept/visitstruct)](https://goreportcard.com/report/github.com/keilerkonzept/visitstruct)
 
 A Go library to recursively visit data structures using reflection.
 
