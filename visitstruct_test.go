@@ -16,7 +16,7 @@ func Example() {
 	obj := &myStruct{
 		String: "hello",
 		Map: map[string]myStruct{
-			"world": myStruct{String: "!"},
+			"world": {String: "!"},
 		},
 	}
 	obj.Ptr = obj
@@ -46,7 +46,7 @@ func TestAny(t *testing.T) {
 			{single: "abc"},
 		},
 		maps: []map[string]interface{}{
-			map[string]interface{}{
+			{
 				"hello": 123,
 				"world": 456,
 			},
