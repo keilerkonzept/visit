@@ -1,5 +1,5 @@
-// Package visitstruct is a library to visit Go data structures (using reflection)
-package visitstruct
+// Package visit is a library to visit Go data structures (using reflection)
+package visit
 
 import (
 	"reflect"

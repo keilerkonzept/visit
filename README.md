@@ -1,24 +1,24 @@
-# visitstruct
+# visit
 
-[![](https://godoc.org/github.com/keilerkonzept/visitstruct?status.svg)](http://godoc.org/github.com/keilerkonzept/visitstruct) [![Go Report Card](https://goreportcard.com/badge/github.com/keilerkonzept/visitstruct)](https://goreportcard.com/report/github.com/keilerkonzept/visitstruct)
+[![](https://godoc.org/github.com/keilerkonzept/visit?status.svg)](http://godoc.org/github.com/keilerkonzept/visit) [![Go Report Card](https://goreportcard.com/badge/github.com/keilerkonzept/visit)](https://goreportcard.com/report/github.com/keilerkonzept/visit)
 
 A Go library to recursively visit data structures using reflection.
 
 ```go
-import "github.com/keilerkonzept/visitstruct"
+import "github.com/keilerkonzept/visit"
 ```
 
 ## Get it
 
 ```sh
-go get -u "github.com/keilerkonzept/visitstruct"
+go get -u "github.com/keilerkonzept/visit"
 ```
 
 ## Use it
 
 ```go
 import (
-    "github.com/keilerkonzept/visitstruct"
+    "github.com/keilerkonzept/visit"
 
     "fmt"
     "reflect"
@@ -40,7 +40,7 @@ func main() {
 	obj.Ptr = obj
 
 	var strings []string
-	visitstruct.Any(obj, func(value, parent, index reflect.Value) (action, error) {
+	visit.Any(obj, func(value, parent, index reflect.Value) (action, error) {
 		if value.Kind() == reflect.String {
 			strings = append(strings, value.String())
 		}
