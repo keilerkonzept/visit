@@ -16,13 +16,13 @@ func Example() {
 	obj := &myStruct{
 		String: "hello",
 		Map: map[string]myStruct{
-			"world": {String: "!"},
+			"world": myStruct{String: "!"},
 		},
 	}
 	obj.Ptr = obj
 
 	var strings []string
-	Any(obj, func(value, parent, index reflect.Value) (Action, error) {
+	Values(obj, func(value ValueWithParent) (Action, error) {
 		if value.Kind() == reflect.String {
 			strings = append(strings, value.String())
 		}
@@ -35,31 +35,40 @@ func Example() {
 
 func TestAny(t *testing.T) {
 	type kitchenSink struct {
-		ptr     *kitchenSink
-		structs []kitchenSink
-		strings []string
-		maps    []map[string]interface{}
-		single  string
+		Ptr     *kitchenSink
+		Structs []kitchenSink
+		Strings []string
+		Maps    []map[string]interface{}
+		Single  string
 	}
 	loopy := kitchenSink{
-		structs: []kitchenSink{
-			{single: "abc"},
+		Structs: []kitchenSink{
+			{Single: "abc"},
 		},
-		maps: []map[string]interface{}{
+		Maps: []map[string]interface{}{
 			{
 				"hello": 123,
 				"world": 456,
 			},
 		},
-		single:  "baz",
-		strings: []string{"foo", "bar"},
+		Single:  "baz",
+		Strings: []string{"foo", "bar"},
 	}
-	loopy.ptr = &loopy
+	loopy.Ptr = &loopy
 	accumulatedStrings := make(map[string]int)
 
+	rewrite := kitchenSink{
+		Single: "abc",
+		Maps: []map[string]interface{}{
+			{
+				"def": []string{"xyz", "uvw"},
+			},
+		},
+		Strings: []string{"foo", "bar"},
+	}
 	type args struct {
 		obj interface{}
-		f   func(v, p, i reflect.Value) (Action, error)
+		f   func(v ValueWithParent) (Action, error)
 	}
 	tests := []struct {
 		name    string
@@ -72,7 +81,7 @@ func TestAny(t *testing.T) {
 			name: "kitchen sink",
 			args: args{
 				obj: &loopy,
-				f: func(v, _, _ reflect.Value) (Action, error) {
+				f: func(v ValueWithParent) (Action, error) {
 					if v.Kind() == reflect.String {
 						accumulatedStrings[v.String()]++
 					}
@@ -89,15 +98,37 @@ func TestAny(t *testing.T) {
 				"baz":   1,
 			},
 		},
+		{
+			name: "rewrite",
+			args: args{
+				obj: &rewrite,
+				f: func(v ValueWithParent) (Action, error) {
+					if v.Kind() == reflect.String {
+						Assign(v, reflect.ValueOf(v.String()+"(edited)"))
+					}
+					return Continue, nil
+				},
+			},
+			out: func() interface{} { return rewrite },
+			wantOut: kitchenSink{
+				Single: "abc(edited)",
+				Maps: []map[string]interface{}{
+					{
+						"def": []string{"xyz(edited)", "uvw(edited)"},
+					},
+				},
+				Strings: []string{"foo(edited)", "bar(edited)"},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Any(tt.args.obj, tt.args.f)
+			err := Values(tt.args.obj, tt.args.f)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Any() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Values() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if out := tt.out(); !reflect.DeepEqual(out, tt.wantOut) {
-				t.Errorf("Any() out = %v, wantOut %v", out, tt.wantOut)
+				t.Errorf("Values() out = %v, wantOut %v", out, tt.wantOut)
 
 			}
 		})

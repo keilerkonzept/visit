@@ -40,11 +40,11 @@ func main() {
 	obj.Ptr = obj
 
 	var strings []string
-	visit.Any(obj, func(value, parent, index reflect.Value) (action, error) {
+	visit.Values(obj, func(value visit.ValueWithParent) (visit.Action, error) {
 		if value.Kind() == reflect.String {
 			strings = append(strings, value.String())
 		}
-		return Continue, nil
+		return visit.Continue, nil
 	})
 	fmt.Println(strings)
 	// Output:
