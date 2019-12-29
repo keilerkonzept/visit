@@ -16,7 +16,7 @@ func Example() {
 	obj := &myStruct{
 		String: "hello",
 		Map: map[string]myStruct{
-			"world": myStruct{String: "!"},
+			"world": {String: "!"},
 		},
 	}
 	obj.Ptr = obj
